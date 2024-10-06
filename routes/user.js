@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const userRouter =Router();
 
-const { userModel } = require("../db/db");
+const { userModel ,purchaseModel,courseModel} = require("../db/db");
 const { userAuthMiddleware } = require('../auth/userAuth'); // Import middleware
 
 
@@ -59,7 +59,7 @@ userRouter.post("/signin",async (req,res)=>{
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
           return res.status(400).json({ message: 'Invalid email or password' });
-        }
+        }``
     
         // Generate JWT token
         const token = jwt.sign(
@@ -69,7 +69,7 @@ userRouter.post("/signin",async (req,res)=>{
             firstName: user.firstName,
             lastName: user.lastName,
           },
-          process.env.JWT_SECRET,
+          process.env.USER_JWT_SECRET,
           { expiresIn: '1h' } // Token expires in 1 hour
         );
     
@@ -82,10 +82,27 @@ userRouter.post("/signin",async (req,res)=>{
       }
 })
 
-userRouter.get("/purchase",userAuthMiddleware, (req,res)=>{
-    res.json({
-        message:"purchase endpoint"
-    })
+userRouter.get("/purchase",userAuthMiddleware, async (req,res)=>{
+  const userId = req.userId;
+
+  const purchases = await purchaseModel.find({
+      userId,
+  });
+
+  let purchasedCourseIds = [];
+
+  for (let i = 0; i<purchases.length;i++){ 
+      purchasedCourseIds.push(purchases[i].courseId)
+  }
+
+  const coursesData = await courseModel.find({
+      _id: { $in: purchasedCourseIds }
+  })
+
+  res.json({
+      purchases,
+      coursesData
+  })
 })
 
 module.exports={

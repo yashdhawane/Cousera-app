@@ -9,8 +9,8 @@ const adminAuthMiddleware = (req, res, next) => {
   
     try {
       // Verify the token
-      const decoded = jwt.verify(token.split(' ')[1], process.env.JWT_SECRET);
-      if (decoded.role !== 'admin') {
+      const decoded = jwt.verify(token, process.env.ADMIN_JWT_SECRET);
+      if (!decoded) {
         return res.status(403).json({ message: 'Access denied. Admins only.' });
       }
       req.user = decoded; // Add admin data to the request object
